@@ -41,6 +41,7 @@ class EventDispatcher(object):
 				handler(*event)
 
 class FdWatcher(object):
+	'Parent class providing async fd monitoring'
 	def __init__(self):
 		self.dispatcher = EventDispatcher()
 
@@ -79,4 +80,10 @@ class FdWatcher(object):
 			self.handle_read(fd)
 		if events & select.POLLOUT:
 			self.handle_write(fd)
+
+	def handle_read(self, fd):
+		pass
+
+	def handle_write(self, fd):
+		pass
 

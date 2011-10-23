@@ -1,0 +1,7 @@
+pyevloop
+--------
+Simple, efficient, async I/O event loop
+
+To install:
+python setup.py install
+

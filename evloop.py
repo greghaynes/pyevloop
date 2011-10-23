@@ -135,21 +135,32 @@ class FdWatcher(object):
 		pass
 
 class SocketWatcher(FdWatcher):
+	def __init__(self):
+		self.out_buff = collections.deque()
+
 	def setup_socket(self, fd):
 		self.setup_fd(fd, select.POLLIN)
 
-class UdpSocketWatcher(SocketWatcher):
-	def __init__(self):
-		self._out_buff = collections.deque()
+class TcpSocketWatcher(SocketWatcher):
+	def send(self, data):
+		self.out_buff.appendleft(data)
+		if len(self.out_buff) == 1:
+			self.set_writable()
 
+	def handle_write(self, fd):
+		data = self.out_buff.pop()
+		if len(self.out_buff) == 0:
+			self.set_writable(False)
+
+class UdpSocketWatcher(SocketWatcher):
 	def sendto(self, data, dest):
 		self.out_buff.appendleft((data, dest))
-		if len(self._out_buff) == 0:
+		if len(self.out_buff) == 1:
 			self.set_writable()
 
 	def handle_write(self, fd):
 		data, dest = out_buff.pop()
 		fd.sendto(data, 0, dest)
-		if len(out_buff) == 0:
+		if len(self.out_buff) == 0:
 			self.set_writable(False)
 

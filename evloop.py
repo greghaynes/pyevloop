@@ -1,3 +1,6 @@
+# Copyright 2011 Gregory Haynes <greg@greghaynes.net>
+# Licensed under the MIT license. See LICENSE for more information.
+
 import select
 import heapq
 import logging

@@ -79,12 +79,13 @@ class EventDispatcher(object):
 	def loop(self, timeout=10):
 		events = self._poll.poll(timeout)
 		for event in events:
+			print 'got events', event
 			try:
 				handler = self._fd_handlers[event[0]]
 			except KeyError:
 				logging.error('No handler found for fd event')
 			else:
-				handler(*event)
+				handler(event[0], event[1])
 		self._timer_q.update()
 
 class FdWatcher(object):
@@ -95,6 +96,7 @@ class FdWatcher(object):
 	def __del__(self):
 		try:
 			self.dispatcher.remove_fd(self._fd)
+			pass
 		except AttributeError, KeyError:
 			pass
 
@@ -102,8 +104,11 @@ class FdWatcher(object):
 		if val:
 			self._eventmask = self._eventmask | flag
 		else:
-			self._eventmask = self.eventmask & (~flag)
+			self._eventmask = self._eventmask & (~flag)
 		self.dispatcher.modify_fd_events(self._fd, self._eventmask)
+
+	def set_hupable(self, val=True):
+		self.set_poll_flag(select.POLLHUP, val)
 
 	def set_readable(self, val=True):
 		self.set_poll_flag(select.POLLIN, val)
@@ -111,11 +116,16 @@ class FdWatcher(object):
 	def set_writable(self, val=True):
 		self.set_poll_flag(select.POLLOUT, val)
 
+	def close(self):
+		self.dispatcher.remove_fd(self._fd)
+		del self._fd
+
 	def setup_fd(self, fd, eventmask):
 		try:
 			'Check if we have an old fd to remove'
 			if self._fd != fd:
 				self.dispatcher.remove_fd(self._fd)
+			pass
 		except AttributeError:
 			pass
 		self.dispatcher.add_fd(fd, eventmask, self.event_handler)
@@ -123,10 +133,22 @@ class FdWatcher(object):
 		self._eventmask = eventmask
 
 	def event_handler(self, fd, events):
-		if events & select.POLLIN:
-			self.handle_read(fd)
-		if events & select.POLLOUT:
-			self.handle_write(fd)
+		if events & select.POLLHUP:
+			self.handle_disconnect(fd)
+			self.close()
+			return
+		try:
+			if events & select.POLLIN and self._fd:
+				print 'read'
+				self.handle_read(fd)
+			if events & select.POLLOUT and self._fd:
+				print 'write'
+				self.handle_write(fd)
+			if events & select.POLLNVAL and self._fd:
+				logging.error('Removing invalid desciptor')
+				self.close()
+		except AttributeError:
+			pass
 
 	def handle_read(self, fd):
 		pass
@@ -136,10 +158,20 @@ class FdWatcher(object):
 
 class SocketWatcher(FdWatcher):
 	def __init__(self):
+		FdWatcher.__init__(self)
 		self.out_buff = collections.deque()
 
-	def setup_socket(self, fd):
-		self.setup_fd(fd, select.POLLIN)
+	def setup_socket(self, sock):
+		sock.setblocking(0)
+		self.socket = sock
+		self.setup_fd(sock.fileno(), select.POLLIN | select.POLLHUP)
+
+	def disconnect(self):
+		self.socket.close()
+		FdWatcher.close(close)
+
+	def handle_disconnect(self, fd):
+		pass
 
 class TcpSocketWatcher(SocketWatcher):
 	def send(self, data):
@@ -149,6 +181,7 @@ class TcpSocketWatcher(SocketWatcher):
 
 	def handle_write(self, fd):
 		data = self.out_buff.pop()
+		self.socket.send(data)
 		if len(self.out_buff) == 0:
 			self.set_writable(False)
 

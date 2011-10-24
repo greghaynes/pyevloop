@@ -1,4 +1,5 @@
 import evloop
+import socket
 import time
 
 def print_time():

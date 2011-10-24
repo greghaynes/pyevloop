@@ -6,7 +6,6 @@ class EchoHandler(evloop.TcpSocketWatcher):
 	def __init__(self, conn, addr):
 		evloop.TcpSocketWatcher.__init__(self)
 		self.setup_socket(conn)
-		self.set_readable()
 
 	def handle_read(self, fd):
 		data = self.socket.recv(1024)
@@ -21,7 +20,6 @@ class EchoServer(evloop.TcpSocketWatcher):
 		s.bind((host, port))
 		s.listen(3)
 		self.setup_socket(s)
-		self.set_readable()
 
 	def handle_read(self, fd):
 		conn, addr = self.socket.accept()

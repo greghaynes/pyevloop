@@ -3,10 +3,11 @@ import socket
 import time
 
 class Client(object):
-	def __init__(self, hostname, port, prefix, sub_time):
-		self.hostname = hostname
+	def __init__(self, host, port, prefix, sub_time):
+		self.host = host
 		self.port = port
 		self.prefix = prefix
+		self.sub_time = sub_time
 
 class PubSubServer(evloop.UdpSocketWatcher):
 	'''This is NOT an efficient implementation.
@@ -22,9 +23,10 @@ class PubSubServer(evloop.UdpSocketWatcher):
 		self.setup_socket(s)
 
 		self.check_client_timeout()
+		self.do_publishing()
 
 	def handle_read(self, socket):
-		data, addr = self.socket.read(4096)
+		data, addr = self.socket.recvfrom(4096)
 		cur_time = time.time()
 		try:
 			self.clients[addr].prefix = data
@@ -43,9 +45,15 @@ class PubSubServer(evloop.UdpSocketWatcher):
 		evloop.EventDispatcher().add_timer(1, self.check_client_timeout)
 
 	def publish(self, msg):
-		for client in self.clients.vals():
+		for client in self.clients.values():
 			if msg.startswith(client.prefix):
+				print 'sending', msg, 'to', client.host
 				self.sendto(msg, (client.host, client.port))
+
+	def do_publishing(self):
+		self.publish('aYou should see this')
+		self.publish('You shouldnt see this')
+		evloop.EventDispatcher().add_timer(self.client_timeout, self.do_publishing)
 
 if __name__=='__main__':
 	server = PubSubServer('127.0.0.1', 8080)

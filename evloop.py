@@ -79,7 +79,6 @@ class EventDispatcher(object):
 	def loop(self, timeout=10):
 		events = self._poll.poll(timeout)
 		for event in events:
-			print 'got events', event
 			try:
 				handler = self._fd_handlers[event[0]]
 			except KeyError:
@@ -139,22 +138,14 @@ class FdWatcher(object):
 			return
 		try:
 			if events & select.POLLIN and self._fd:
-				print 'read'
 				self.handle_read(fd)
 			if events & select.POLLOUT and self._fd:
-				print 'write'
 				self.handle_write(fd)
 			if events & select.POLLNVAL and self._fd:
 				logging.error('Removing invalid desciptor')
 				self.close()
 		except AttributeError:
 			pass
-
-	def handle_read(self, fd):
-		pass
-
-	def handle_write(self, fd):
-		pass
 
 class SocketWatcher(FdWatcher):
 	def __init__(self):
@@ -192,8 +183,8 @@ class UdpSocketWatcher(SocketWatcher):
 			self.set_writable()
 
 	def handle_write(self, fd):
-		data, dest = out_buff.pop()
-		fd.sendto(data, 0, dest)
+		data, dest = self.out_buff.pop()
+		self.socket.sendto(data, 0, dest)
 		if len(self.out_buff) == 0:
 			self.set_writable(False)
 

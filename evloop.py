@@ -149,9 +149,9 @@ class FdWatcher(object):
 		try:
 			handlers = []
 			if events & select.POLLIN and self._fd:
-				handlers.append(handle_read)
+				handlers.append(self.handle_read)
 			if events & select.POLLOUT and self._fd:
-				handlers.append(handle_write)
+				handlers.append(self.handle_write)
 			if events & select.POLLNVAL and self._fd:
 				logging.error('Removing invalid desciptor')
 				self.close()

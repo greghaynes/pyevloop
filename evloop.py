@@ -147,15 +147,18 @@ class FdWatcher(object):
 			self.close()
 			return
 		try:
+			handlers = []
 			if events & select.POLLIN and self._fd:
-				self.handle_read(fd)
+				handlers.append(handle_read)
 			if events & select.POLLOUT and self._fd:
-				self.handle_write(fd)
+				handlers.append(handle_write)
 			if events & select.POLLNVAL and self._fd:
 				logging.error('Removing invalid desciptor')
 				self.close()
 		except AttributeError:
 			pass
+		for handler in handlers:
+			handler(fd)
 
 class SocketWatcher(FdWatcher):
 	def __init__(self):

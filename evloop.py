@@ -82,7 +82,12 @@ class EventDispatcher(object):
 			try:
 				handler = self._fd_handlers[event[0]]
 			except KeyError:
-				logging.error('No handler found for fd event')
+				ev_str = {
+					select.POLLHUP: 'POLLHUP',
+					select.POLLIN: 'POLLIN',
+					select.POLLOUT: 'POLLOUT',
+					select.POLLNVAL: 'POLLNVAL' }[event[1]]
+				logging.error('No handler found for fd event %s' % ev_str)
 			else:
 				handler(event[0], event[1])
 		self._timer_q.update()
@@ -120,6 +125,11 @@ class FdWatcher(object):
 		del self._fd
 
 	def setup_fd(self, fd, eventmask):
+		try:
+			self.file_handle = fd
+			fd = fd.fileno()
+		except AttributeError:
+			pass
 		try:
 			'Check if we have an old fd to remove'
 			if self._fd != fd:

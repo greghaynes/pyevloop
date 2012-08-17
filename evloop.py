@@ -6,6 +6,8 @@ import heapq
 import logging
 import time
 import collections
+import os
+import fcntl
 
 class TimerQueue(object):
 	def __init__(self):
@@ -130,6 +132,8 @@ class FdWatcher(object):
 			fd = fd.fileno()
 		except AttributeError:
 			pass
+		fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+		fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 		try:
 			'Check if we have an old fd to remove'
 			if self._fd != fd:

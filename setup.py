@@ -6,5 +6,6 @@ setup(name='evloop',
     author='Gregory Haynes',
     author_email='greg@greghaynes.net',
     url='http://github.com/greghaynes/pyevloop',
+    license='MIT',
     packages=['evloop'],
     )

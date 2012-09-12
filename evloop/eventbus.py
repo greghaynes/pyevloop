@@ -12,9 +12,9 @@ class EventBus(object):
 
     def emit(self, event, *args, **kwargs):
         try:
-        handlers = self.event_handlers[event]
+            handlers = self.event_handlers[event]
         except KeyError:
-        return
+            return
         for handler in handlers:
             handler(*args, **kwargs)
 
